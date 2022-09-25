@@ -6,6 +6,7 @@ using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Tests.XUnit;
 using System.Buffers.Tests;
 using System.Linq;
+using System.Numerics.Tests;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -20,6 +21,27 @@ namespace BenchmarkDotNet.Tests
                 .WithArtifactsPath(@"C:\Projects\performance\artifacts\bin\MicroBenchmarks\Release\netcoreapp5.0\BenchmarkDotNet.Artifacts");
 
             var benchmarkCase = BenchmarkConverter.TypeToBenchmarks(typeof(RentReturnArrayPoolTests<byte>), config).BenchmarksCases.First();
+
+            var parameters = new DiagnoserActionParameters(
+                process: null,
+                benchmarkCase: benchmarkCase,
+                new BenchmarkId(0, benchmarkCase));
+
+            foreach (string fileExtension in new[] { "etl", "kernel.etl", "userheap.etl" })
+            {
+                var traceFilePath = ArtifactFileNameHelper.GetTraceFilePath(parameters, new System.DateTime(2020, 10, 1), fileExtension);
+
+                Assert.InRange(actual: traceFilePath.Length, low: 0, high: 260);
+            }
+        }
+
+        [FactWindowsOnly(nonWindowsSkipReason: "ETW Sessions can be created only on Windows")]
+        public void OnWindowsWeMustAlwaysTruncateThePathForSessionFilesToTheAppropriateLength()
+        {
+            var config = DefaultConfig.Instance
+                .WithArtifactsPath(@"C:\Projects\performance\artifacts\bin\MicroBenchmarks\Release\netcoreapp5.0\BenchmarkDotNet.Artifacts");
+
+            var benchmarkCase = BenchmarkConverter.TypeToBenchmarks(typeof(ParseBigIntegerTests), config).BenchmarksCases.First();
 
             var parameters = new DiagnoserActionParameters(
                 process: null,
@@ -83,5 +105,13 @@ namespace System.Buffers.Tests
                 pool.Return(arr);
             }
         }
+    }
+}
+
+namespace System.Numerics.Tests
+{
+    public class ParseBigIntegerTests
+    {
+
     }
 }
